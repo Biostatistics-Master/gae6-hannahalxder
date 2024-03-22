@@ -1,6 +1,6 @@
 ---
 title: "GAE6: Pea Aphids: multiple comparisons"
-author: "Your Name Here"
+author: "Hannah Alexander"
 format: 
   html:
     embed-resources: true
@@ -81,6 +81,8 @@ To measure color, the researchers used Adobe Photoshop CS (version 8.01, Adobe I
 
 I tested for differences among the un-injected control (Control), the injected but uninfected aphids (Uninfected), and the injected and infected aphids (Infected) by analysis of variance (ANOVA) using the lm() function from R [@base] and the Anova() function from the car package [@car]. All data manipulation and graphical results were computed using packages provided by the tidyverse metapackage [@tidyverse] and all tabular results were produced using the kbl() function from the kableExtra package [@kableExtra].
 
+The emmeans package [@emmeans] was used to calculate planned and unplanned comparisons and test for differences between injected and un-injected aphids, infected and uninfected aphids, and all pairwise comparisons of means.
+
 ## Results:
 
 Infected pea aphids exhibited distinctly larger hue angles and hence greener colors (@tbl-ANOVA, @fig-Aphids). This result supports the researchers' hypothesis that infection may lead to color change.
@@ -146,8 +148,8 @@ ggplot(aphids)+
     expand = c(0,0)
   ) +
   scale_color_steps(
-    low = "orangered3",
-    high = "darkgreen"
+    low = "pink",
+    high = "purple"
   ) +
   theme_classic() +
   theme(
@@ -155,5 +157,58 @@ ggplot(aphids)+
   )
 
 ```
+
+```{r}
+#| label: tbl-Contrast
+#| tbl-cap: "Planned hypothesis tests"
+aphidMeans <- emmeans(aphidMod, "Treatment")
+
+aphidCont <- tidy(contrast(
+  aphidMeans, 
+  method = list(
+    #                                   Un-inj   Un-inf   INF
+    'Control vs Uninfected & Infected' = c(2,     -1,     -1),
+    'Uninfected vs Infected'           = c(0,     -1,      1)
+  ),
+  adjust = "none"
+))[,-c(1,3)]
+
+aphidCont$p.value <- format.pval(
+  aphidCont$p.value,
+  digits = 3,
+  eps = 0.001,
+  na.form = ''
+)
+
+kbl(
+  aphidCont,
+  col.names = c(
+    "Contrast",
+    "Estimate",
+    "SE",
+    "df",
+    "t",
+    "P"
+  ),
+digits = c(0,3,3,0,3,3),
+align = "r",
+table.attr = 'data-quarto-disable-processing="true"'
+) |>
+  kable_classic(full = FALSE)
+```
+
+```{r}
+#| label: tbl-Tukey
+#| tbl-cap: "All pair-wise comparisons of means with the Tukey correction to protect the experimentwize error rate at 0.05"
+
+kbl(
+  pairs(aphidMeans),
+  digits = 4,
+  table.attr = 'data-quarto-disable-processing="true"'
+) |>
+  kable_classic(full = FALSE)
+```
+
+Based on Table 3, there was no significant difference found between the hues of control and uninfected aphids. 
 
 ## References:
